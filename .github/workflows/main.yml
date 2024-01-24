@@ -31,7 +31,7 @@ jobs:
           nuitka-version: factory
           script-name: src/main_window.py
           onefile: false
-          standalone: false
+          standalone: true
           enable-plugins: pyside6
 
       # Uploads artifact
