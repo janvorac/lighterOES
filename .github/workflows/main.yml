@@ -38,5 +38,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: exe
-          path: build/main_window.exe
+          name: lighterOES
+          path: build/main_window.dist
