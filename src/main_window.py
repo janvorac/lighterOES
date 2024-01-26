@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMainWindow,
 )
+import read_data 
 
 
 class SpecWindow(QMainWindow):
@@ -15,6 +16,8 @@ class SpecWindow(QMainWindow):
         self.setWindowTitle(self.title)
         self.menu_actions()
         self.show()
+        
+        self.measured_data = None
 
     def menu_actions(self):
         self.menuBar = self.menuBar()
@@ -29,6 +32,8 @@ class SpecWindow(QMainWindow):
         filename = dialog.getOpenFileName()
         if filename:
             self.title = f"SpecApp - {filename[0]}"
+            self.data = read_data.read_data(filename[0])
+            print(self.data)
         else:
             self.title = "SpecApp"
         self.setWindowTitle(self.title)
