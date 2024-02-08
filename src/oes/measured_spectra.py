@@ -25,9 +25,8 @@ class Parameters(object):
 
     def __init__(self, *args, **kwargs):
         """
-        wavelengths:  *iterable* with three numbers. The wavelength axis is then calculated from
-                      pixel position (pos) as
-                      lambda = wavelengths[0] + wavelengths[1]*pos + wavelengths[2]*pos**2
+        wav_shift: an offset of the wavelength-axis in nm
+        wav_step: mean step of the wavelength-axis
 
         slitf_gauss: gaussian HWHM of the slit function
         slitf_lorentz: lorentzian HWHM of the slit function
@@ -42,10 +41,10 @@ class Parameters(object):
         self.number_of_pixels = kwargs.pop("number_of_pixels", 1024)
         self.prms = lmfit.Parameters()
         self.info = {"species": []}
-        wavs = kwargs.pop("wavelengths", (0, 1, 0))
-        self.prms.add("wav_start", value=wavs[0])
-        self.prms.add("wav_step", value=wavs[1])
-        self.prms.add("wav_2nd", value=wavs[2])
+        wav_shift = kwargs.pop("wav_shift", 0)
+        self.prms.add("wav_shift", value=wav_shift)
+        wav_step = kwargs.pop("wav_step", 1e-2)
+        self.prms.add("wav_step", value=wav_step)
 
         gauss = kwargs.pop("slitf_gauss", 1e-9)
         lorentz = kwargs.pop("slitf_lorentz", 1e-9)
@@ -141,21 +140,16 @@ class MeasuredSpectra:
         iterables (tuples or lists) containing [identificator, data],
         where identificator can be a string or a number (can contain
         e.g. spatial position or delay after the trigger) and data
-        should be 1D numpy array (a vector) of \'intensity\'
-        values. The wavelengths are not contained here, but are always
-        calculated from Parameters (see class Parameters).
+        should be in the form of a Spectrum object.
 
         kwargs:
 
         spectra: a nested OrderedDict with keys defined by the user (typically used
         for experimental info,  such as physical coordinates or experimental
         conditions). Each value contains again a dictionary with 'params' and 'spectrum'.
-        'params' are massiveOES.MeasuredSpectra.Parameters,
-        'spectrum' are either 1D numpy arrays (y-axis of spectra)
-        or massiveOES.Spectrum objects. In case of 1D arrays , the wavelength
-        axis is calculated from parameters [wav_start, wav_step, wav_2nd]. In
-        case of massiveOES.Spectrum object, the wavelengths are believed to be
-        right and are not allowed to change.
+        'params' are of type Parameters,
+        'spectrum' are Spectrum objects. The wavelengths are believed to be
+        right except for a constant offset.
 
         spectra (OrderedDict)
           {spectrum_id: {'params':massiveOES.Parameters,
@@ -167,8 +161,6 @@ class MeasuredSpectra:
 
         filename: *string* - name of the file with the source data. Only for future reference, can be omitted.
 
-        filenameSPE: *string* obsolete, used to keep track of the original SPE files from PIMAX ICCD camera
-
         date: defaults to 0, but can be used to keep the date of the measurement. Format is arbitrary.
 
         time: defaults to 0, but can be used to keep the time of the measurement. Format is arbitrary.
@@ -178,7 +170,6 @@ class MeasuredSpectra:
         """
 
         self.filename = kwargs.pop("filename", "")
-        self.filenameSPE = kwargs.pop("filenameSPE", "")
         self.date = kwargs.pop("date", 0)
         self.time = kwargs.pop("time", 0)
         self.accumulations = kwargs.pop("accumulations", 0)
@@ -198,7 +189,7 @@ class MeasuredSpectra:
     def from_csv(cls, filename, **genfromtxtargs):
         """Used to extract measured data from ASCII files containing the
         wavelengths in the first column and and intensity vectors of
-        y-values in other columns. Delimiter must be coma:
+        y-values in other columns. Delimiter can be set via genfromtxtargs:
 
         w1,y11,y21
         w2,y12,y22
@@ -211,33 +202,21 @@ class MeasuredSpectra:
         ...
 
         """
-        # loads data from csv, expects first column of wavelengts and coma as separator
         delimiter = genfromtxtargs.pop("delimiter", ",")
         dataarray = numpy.genfromtxt(filename, delimiter=delimiter, **genfromtxtargs)
-        wavs = [dataarray[0, 0], dataarray[1, 0] - dataarray[0, 0], 0]
         spec = OrderedDict()
         for i in range(1, dataarray.shape[1]):
             spec[i] = {
                 "spectrum": spectrum.Spectrum(x=dataarray[:, 0], y=dataarray[:, i])
             }
 
-        ret = MeasuredSpectra(filename=filename, spectra=spec, wavelengths=wavs)
-
-        return ret
-
-    @staticmethod
-    def from_FHRfile(filename):
-        """used to extract measured data from ASCII files containing the
-        wavelengths in the first row and ID and intensity vector in
-        each other row, i.e.:
-            \t w1  \t w2  \t w3...
-        ID1 \t y11 \t y12 \t y13...
-        ID2 \t y21 \t y22 \t y23...
-        ...
-
-        """
-        fhrs = FHRSpectra.from_file(filename=filename)
-        ret = MeasuredSpectra.from_FHRSpectra(fhrs)
+        ret = MeasuredSpectra(filename=filename, spectra=spec)
+        for spec in ret.spectra:
+            s = ret.spectra[spec]
+            step = numpy.mean(numpy.diff(s["spectrum"].x))
+            if step <= 0:
+                raise ValueError("The spectrum x-axis must be ordered ascendingly!")
+            s["params"]["wav_step"].value = step
         return ret
 
     def add_specie(self, specie, specname, **kwargs):
@@ -261,11 +240,7 @@ class MeasuredSpectra:
             **kwargs:
         simulated_spectra: *list* of SpecDB objects
 
-        wavelengths: tuple/list with meaning [0]: wavelength_start, [1]:
-        wavelength_step (difference of wavelength position of two
-        neiboughring pixels), [2]: 2nd order correction. The resulting
-        wavelegth axis is computed from pixel index 'pos' as x = wav[0] +
-        wav[1]*pos + wav[2]*pos**2
+        wav_shift: a shift of the wavelength-axis in nm
 
         other kwargs are passed directly to Parameters.__init__()
         """
@@ -284,7 +259,9 @@ class MeasuredSpectra:
             pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
 
     def get_measured_spectrum(self, specname):
-        return self.spectra[specname]["spectrum"]
+        s = self.spectra[specname]["spectrum"]
+        wav_shift = self.spectra[specname]["params"]["wav_shift"].value
+        return spectrum.Spectrum(x=s.x + wav_shift, y=s.y)
 
     def to_json(self, filename):
         spectra = OrderedDict()
@@ -306,9 +283,9 @@ class MeasuredSpectra:
             }
 
         # simulations = list(self.simulations.keys())
-        simulations = OrderedDict()
+        simulations = []
         for simkey in self.simulations:
-            simulations[simkey] = {"kind": self.simulations[simkey].kind}
+            simulations.append(simkey)
         to_save = {"spectra": spectra, "params": params, "simulations": simulations}
 
         with open(filename, "w") as fp:
@@ -333,10 +310,7 @@ class MeasuredSpectra:
 
         sims = {}
         for sim in loaded["simulations"]:
-            try:
-                sims[sim] = SpecDB(sim + ".db", kind=loaded["simulations"][sim]["kind"])
-            except TypeError:
-                sims[sim] = SpecDB(sim + ".db")
+            sims[sim] = SpecDB(sim + ".db")
 
         for param, s in zip(loaded["params"], list(spec.keys())):
             to_app = Parameters(
@@ -361,7 +335,7 @@ class MeasuredSpectra:
         ret.simulations = sims
         return ret
 
-    def _get_residuals(self, params, specname, **kwargs):
+    def get_residuals(self, params, specname, **kwargs):
         """
         method with the desired signature for lmfit.minimize
         """
@@ -371,12 +345,17 @@ class MeasuredSpectra:
         self.spectra[specname]["params"].prms = params
         params = self.spectra[specname]["params"]
 
-        return spectrum.compare_spectra(
-            self.get_measured_spectrum(specname),
-            generate_spectrum(
-                params, convolve=convolve, step=step, sims=self.simulations
-            ),
+        measured_spec = self.get_measured_spectrum(specname)
+        simulated_spec = generate_spectrum(
+            params,
+            convolve=convolve,
+            step=step,
+            sims=self.simulations,
+            wmin=measured_spec.x.min(),
+            wmax=measured_spec.x.max(),
         )
+
+        return spectrum.compare_spectra(measured_spec, simulated_spec)
 
     def fit(self, specname, **kwargs):
         """Find optimal values of the fit parameters for spectrum identified by specname. The optimal values are then stored in self.spectra[specname]['params'], not returned!
@@ -407,7 +386,7 @@ class MeasuredSpectra:
         method = kwargs.pop("method", "leastsq")
         if method == "leastsq":
             self.minimizer = lmfit.Minimizer(
-                self._get_residuals,
+                self.get_residuals,
                 self.spectra[specname]["params"].prms,
                 fcn_args=(specname,),
                 fcn_kws=kwargs,
@@ -415,7 +394,7 @@ class MeasuredSpectra:
             )
         else:
             self.minimizer = lmfit.Minimizer(
-                self._get_residuals,
+                self.get_residuals,
                 self.spectra[specname]["params"].prms,
                 fcn_args=(specname,),
                 fcn_kws=kwargs,
@@ -452,7 +431,7 @@ class MeasuredSpectra:
             if not self.spectra[specname]["params"].info["species"]:
                 sumsq = numpy.nan
             else:
-                residuals = self._get_residuals(
+                residuals = self.get_residuals(
                     self.spectra[specname]["params"].prms, specname
                 )
 

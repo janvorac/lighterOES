@@ -225,17 +225,10 @@ class SpecDB(object):
 
 def generate_spectrum(params, **kwargs):
     step = kwargs.pop("step", params["wav_step"].value)
-    wmin = kwargs.pop("wmin", params["wav_start"].value)
+    wmin = kwargs.pop("wmin", None)
     wmax = kwargs.pop("wmax", None)
     sims = kwargs.pop("sims", {})
     points_density = kwargs.pop("points_per_nm", 1000)
-
-    if wmax is None:
-        wmax = (
-            params["wav_start"].value
-            + params["wav_step"].value * params.number_of_pixels
-            + params["wav_2nd"].value * params.number_of_pixels**2
-        )
 
     spectra = []
     for specie in params.info["species"]:
@@ -263,6 +256,6 @@ def generate_spectrum(params, **kwargs):
     )
     if len(spec.y) > 0:
         spec.y += params["baseline"].value
-        spec.y += params["baseline_slope"].value * (spec.x - params["wav_start"].value)
+        spec.y += params["baseline_slope"].value * (spec.x - wmin)
 
     return spec
