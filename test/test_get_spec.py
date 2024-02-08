@@ -1,5 +1,5 @@
 import pytest
-from oes.spec_pandas import SpecDB
+from oes.specdata import SpecDB
 
 
 @pytest.fixture
