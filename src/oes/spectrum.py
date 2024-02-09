@@ -3,7 +3,6 @@ import warnings
 
 import numpy as np
 from scipy.interpolate import interp1d
-from scipy.optimize import minimize
 from scipy.signal import fftconvolve
 from scipy.special import wofz
 
