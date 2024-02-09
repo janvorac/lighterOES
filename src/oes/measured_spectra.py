@@ -135,7 +135,7 @@ class MeasuredSpectra:
         only for future reference - to allow the experimenter to keep
         track of the important metadata.
 
-        The only exception is \'spectra'\ that can be used to fill in
+        The only exception is `spectra` that can be used to fill in
         the measured data. The format of this should be a list of
         iterables (tuples or lists) containing [identificator, data],
         where identificator can be a string or a number (can contain
