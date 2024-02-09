@@ -13,7 +13,3 @@ def test_get_spectrum(oh_ax):
     assert spec.y[:10].sum() == pytest.approx(11599, rel=1)
     assert spec.y[-10:].sum() == pytest.approx(1170, rel=1)
     assert spec.y[100:200].sum() == pytest.approx(198190, rel=1)
-
-
-
-    

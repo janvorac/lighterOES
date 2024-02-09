@@ -1,7 +1,9 @@
 import pandas as pd
 
+
 class ReadDataError(Exception):
     pass
+
 
 def read_data(filename):
     """Reads data from a file and returns a pandas DataFrame.

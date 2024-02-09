@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMainWindow,
 )
-import read_data 
+import read_data
 
 
 class SpecWindow(QMainWindow):
@@ -16,7 +16,7 @@ class SpecWindow(QMainWindow):
         self.setWindowTitle(self.title)
         self.menu_actions()
         self.show()
-        
+
         self.measured_data = None
 
     def menu_actions(self):
@@ -37,7 +37,7 @@ class SpecWindow(QMainWindow):
         else:
             self.title = "SpecApp"
         self.setWindowTitle(self.title)
-        
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
