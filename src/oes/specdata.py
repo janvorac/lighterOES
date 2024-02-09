@@ -26,7 +26,7 @@ class SpecDB(object):
         args:
         -----
         filename: name of the database file. Just the file, not the path. The files
-        will be ALWAYS searched for exclusively in massiveOES_location/data
+        will be ALWAYS searched for exclusively in lighteroes/data
         directory. Providing full path will result in error.
 
         """
@@ -96,7 +96,7 @@ class SpecDB(object):
         kwargs:
            wavelength: either 'vacuum' or 'air', returns the wavelength in vacuum or air (default is 'air')
 
-           as_spectrum: bool, if True object massiveOES.Spectrum is returned, otherwise a numpy array is returned
+           as_spectrum: bool, if True object Spectrum is returned, otherwise a numpy array is returned
 
             y: either 'photon_flux' (default), i.e. the y*axis is population * (emission coefficient)
               or 'intensity', i.e. the y-axis is population * (emission coefficient) * wavenumber

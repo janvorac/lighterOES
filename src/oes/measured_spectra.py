@@ -16,7 +16,7 @@ class Parameters(object):
     of lmfit.Parameters class (as self.prms). The respective parameters can be
     accessed via __getitem__() method (i.e. brackets), just like in a
     dictionary. Apart from that contains also some extra information
-    necessary for massiveOES to run properly, such as number of
+    necessary for measured_spectra to run properly, such as number of
     pixels and list of relevant species.
 
     It is usually not necessary to explicitly call any class methods,
@@ -152,8 +152,8 @@ class MeasuredSpectra:
         right except for a constant offset.
 
         spectra (OrderedDict)
-          {spectrum_id: {'params':massiveOES.Parameters,
-                        'spectrum': 1D array or massiveOES.Spectrum}}
+          {spectrum_id: {'params': Parameters,
+                        'spectrum': Spectrum}}
 
         at the time of init, only 'data' of each dict should be defined,
         the 'params' will be added by automatically by
