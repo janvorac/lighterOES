@@ -282,7 +282,6 @@ class MeasuredSpectra:
                 "prms": par.prms.dumps(),
             }
 
-        # simulations = list(self.simulations.keys())
         simulations = []
         for simkey in self.simulations:
             simulations.append(simkey)
