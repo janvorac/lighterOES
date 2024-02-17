@@ -188,57 +188,6 @@ def compare_spectra(spectrum_exp, spectrum_sim):
     return dif
 
 
-def compare_spectra_weighted(spectrum_exp, spectrum_sim):
-    """
-    weight the sum of squared residuals by the measured intensity at given position.
-    """
-    dif = compare_spectra(spectrum_exp, spectrum_sim)
-    dif *= spectrum_exp.y
-    return dif
-
-
-def compare_spectra_reduced_susmq(spectrum_exp, spectrum_sim):
-    """
-    compare spectra, take the residuals and divide them by
-    (len of the measured spectrum)**2,
-    usefull, if the length of the measurement is expected to vary during the
-    minimization process.
-    """
-    dif = compare_spectra(spectrum_exp, spectrum_sim)
-    ret = np.dot(dif, dif) / len(dif) ** 2
-    logging.debug("sumsq = {:.8e}".format(ret))
-    if np.isnan(ret):
-        ret = 1e100
-    print("sumsq = ", ret)
-    return ret
-
-
-def add_spectra(simulated_spectra, amplitudes):
-    """
-    calculate linear combination of several Spectrum objects
-
-    args:
-    -----
-    simulated_spectra: list of Spectrum objects
-
-    amplitudes: list of floats, coefficients in the linear combination
-
-    return:
-    ------
-    Spectrum object - linear combination of several Spectrum objects
-
-
-    """
-    if not simulated_spectra:
-        return Spectrum()
-    added_spectra = np.zeros((len(simulated_spectra[0].x), 2))
-    added_spectra[:, 0] = simulated_spectra[0].x
-    for amplitude, spectrum in zip(amplitudes, simulated_spectra):
-        added_spectra[:, 1] += amplitude * spectrum.y
-    ret = Spectrum(x=added_spectra[:, 0], y=added_spectra[:, 1], normalize=False)
-    return ret
-
-
 def voigt(x, y):
     """
     Taken from `astro.rug.nl <http://www.astro.rug.nl/software/kapteyn-beta/kmpfittutorial.html?highlight=voigt#voigt-profiles/>`_
