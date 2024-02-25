@@ -2,17 +2,19 @@ import logging
 import warnings
 
 import numpy as np
-from scipy.interpolate import interp1d
-from scipy.signal import fftconvolve
-from scipy.special import wofz
+from scipy.interpolate import interp1d  # type: ignore [import-untyped]
+from scipy.signal import fftconvolve  # type: ignore [import-untyped]
+from scipy.special import wofz  # type: ignore [import-untyped]
 
 
-class Spectrum(object):
+class Spectrum:
     """An object holding x and y axis and implememnting some methods
     often used in processing of spectroscopic data.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self, x: np.typing.NDArray[np.float64], y: np.typing.NDArray[np.float64]
+    ):
         """
 
         kwargs:
@@ -25,30 +27,23 @@ class Spectrum(object):
         forbidden, most of the methods will fail otherwise)
 
         """
-        self.x = kwargs.pop("x", [])
-        self.y = kwargs.pop("y", [])
-        if len(self.y) > 0:
-            self.maximum = np.max(self.y)
-        else:
-            self.maximum = None
-        normalize = kwargs.pop("normalize", False)
-        if normalize and self.maximum is not None:
-            self.y /= self.maximum  # normalize intensities
+        self.x = x
+        self.y = y
+
         if len(self.x) != len(self.y):
-            warnings.warn("Spectrum: length of x and y mismatch!", Warning)
+            raise ValueError("Spectrum: length of x and y mismatch!")
 
     def __len__(self):
-        lx = len(self.x)
-        ly = len(self.y)
-        if lx == ly:
-            return lx
-        else:
-            warnings.warn("Spectrum: length of x and y mismatch!", Warning)
-            return lx, ly
+        return len(self.x)
 
-    def convolve_with_slit_function(self, **kwargs):
+    def convolve_with_slit_function(
+        self,
+        gauss: float = 0.1,
+        lorentz: float = 1e-9,
+        instrumental_step: float | None = None,
+    ):
         """
-        Broaden the peaks in the spectrum by Voigt profile and by a rectangle of given width.
+        Broaden the peaks in the spectrum by voigt profile and by a rectangle of given width.
         Changes state of the instance, returns nothing.
 
         **kwargs:
@@ -61,15 +56,10 @@ class Spectrum(object):
         -------
         None, modifies the spectrum in place
         """
-        logging.debug("====////****convolve_with_slit_function****////====")
-        gauss = kwargs.pop("gauss", 0.1)
-        lorentz = kwargs.pop("lorentz", 1e-9)
-        logging.debug("gauss = %s", gauss)
-        logging.debug("lorentz =%f ", lorentz)
-        slit = Voigt(self.x, gauss, lorentz, np.mean(self.x), 1)
+
+        slit = voigt(self.x, gauss, lorentz, np.mean(self.x), 1.0)  # type: ignore [arg-type]
         slit /= np.sum(slit)
 
-        instrumental_step = kwargs.pop("step", None)
         numpoints = len(self.y)
         if instrumental_step is None:
             convolution_profile = slit[slit > max(slit) / 1000.0]
@@ -82,16 +72,16 @@ class Spectrum(object):
                 warnings.warn(msg, UserWarning)
                 convolution_profile = slit[slit > max(slit) / 1000.0]
             else:
-                instrumetal_step_profile = np.ones(
+                instrumental_step_profile = np.ones(
                     int(instrumental_step / simulated_step) + 1
                 )
-                if len(slit) >= len(instrumetal_step_profile):
+                if len(slit) >= len(instrumental_step_profile):
                     convolution_profile_uncut = fftconvolve(
-                        slit, instrumetal_step_profile, mode="same"
+                        slit, instrumental_step_profile, mode="same"
                     )
                 else:
                     convolution_profile_uncut = fftconvolve(
-                        instrumetal_step_profile, slit, mode="same"
+                        instrumental_step_profile, slit, mode="same"
                     )
                 convolution_profile = convolution_profile_uncut[
                     convolution_profile_uncut > max(convolution_profile_uncut) / 1000
@@ -99,17 +89,16 @@ class Spectrum(object):
 
         self.y = fftconvolve(self.y, convolution_profile, mode="same")
 
-        if not len(self.y) > 0:
+        if len(self.y) == 0:
             self.y = (
                 np.ones(numpoints) * 1e100
             )  # if the array gets destroyed by fftconvolve,
             # set array to ridiculously huge values
         if any(np.isnan(self.y)):
             self.y[:] = 1e100
-            logging.debug("conv = %s", self.y)
         return
 
-    def refine_mesh(self, points_per_nm=3000):
+    def refine_mesh(self, points_per_nm: int = 3000):
         """
         adds artificial zeros in between lines. Usually used after creating
         a simulated spectrum before convolution with slit function.
@@ -136,7 +125,7 @@ class Spectrum(object):
         return spec
 
 
-def match_spectra(sim_spec, exp_spec):
+def match_spectra(sim_spec: Spectrum, exp_spec: Spectrum) -> tuple[Spectrum, Spectrum]:
     """
     Take two Spectrum objects with different x-axes
     (the ranges must partially overlap)
@@ -166,9 +155,7 @@ def match_spectra(sim_spec, exp_spec):
     interp = interp1d(sim_spec.x, sim_spec.y)
     y_interp = interp(exp_spec.x)
 
-    ret = (Spectrum(x=exp_spec.x, y=y_interp), exp_spec)
-
-    return ret
+    return (Spectrum(x=exp_spec.x, y=y_interp), exp_spec)
 
 
 def compare_spectra(spectrum_exp, spectrum_sim):
@@ -188,11 +175,11 @@ def compare_spectra(spectrum_exp, spectrum_sim):
     return dif
 
 
-def voigt(x, y):
+def _voigt(x: np.typing.NDArray[np.float64], y: np.typing.NDArray[np.float64]):
     """
     Taken from `astro.rug.nl <http://www.astro.rug.nl/software/kapteyn-beta/kmpfittutorial.html?highlight=voigt#voigt-profiles/>`_
 
-    The Voigt function is also the real part of
+    The voigt function is also the real part of
     `w(z) = exp(-z^2) erfc(iz)`, the complex probability function,
     which is also known as the Faddeeva function. Scipy has
     implemented this function under the name `wofz()`
@@ -202,11 +189,17 @@ def voigt(x, y):
     return I
 
 
-def Voigt(nu, alphaD, alphaL, nu_0, A, a=0, b=0):
+def voigt(
+    nu: np.typing.NDArray[np.float64],
+    alphaD: float,
+    alphaL: float,
+    nu_0: float,
+    A: float,
+):
     """
     Taken from `astro.rug.nl <http://www.astro.rug.nl/software/kapteyn-beta/kmpfittutorial.html?highlight=voigt#voigt-profiles/>`_
 
-    The Voigt line shape in terms of its physical parameters
+    The voigt line shape in terms of its physical parameters
 
     Args:
       **nu**:  light frequency axis
@@ -219,10 +212,6 @@ def Voigt(nu, alphaD, alphaL, nu_0, A, a=0, b=0):
 
       **A**:  integral under the line
 
-      **a**:  constant background
-
-      **b**:  slope of linearly changing background (bg = a + b*nu)
-
     Returns:
       **V**: The voigt profile on the nu axis
     """
@@ -233,6 +222,5 @@ def Voigt(nu, alphaD, alphaL, nu_0, A, a=0, b=0):
     f = np.sqrt(np.log(2))
     x = (nu - nu_0) / alphaD * f
     y = alphaL / alphaD * f
-    backg = a + b * nu
-    V = A * f / (alphaD * np.sqrt(np.pi)) * voigt(x, y) + backg
+    V = A * f / (alphaD * np.sqrt(np.pi)) * _voigt(x, y)
     return V

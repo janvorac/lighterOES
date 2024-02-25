@@ -334,7 +334,7 @@ class MeasuredSpectra:
         ret.simulations = sims
         return ret
 
-    def get_residuals(self, params, specname, **kwargs):
+    def get_residuals(self, params: lmfit.Parameters, specname: str, **kwargs):
         """
         method with the desired signature for lmfit.minimize
         """
@@ -342,12 +342,11 @@ class MeasuredSpectra:
         step = params["wav_step"].value
 
         self.spectra[specname]["params"].prms = params
-        params = self.spectra[specname]["params"]
+        our_params: Parameters = self.spectra[specname]["params"]
 
         measured_spec = self.get_measured_spectrum(specname)
         simulated_spec = generate_spectrum(
-            params,
-            convolve=convolve,
+            our_params,
             step=step,
             sims=self.simulations,
             wmin=measured_spec.x.min(),
