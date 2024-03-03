@@ -1,47 +1,44 @@
 import sys
+import os
 from PySide6.QtWidgets import (
     QApplication,
     QVBoxLayout,
     QFileDialog,
-    QMainWindow,
+    QMainWindow
 )
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import QFile, QIODevice
+from PySide6.QtUiTools import loadUiType
 
 import read_data 
 
 
-class SpecWindow(QMainWindow):
+current_dir = os.path.dirname(os.path.abspath(__file__))
+Form, Base = loadUiType(os.path.join(current_dir, "UI_structure.ui"))
 
-    if __name__ == "__main__":
-        loader = QUiLoader()
-        app = QApplication(sys.argv)
+class SpecWindow(Base, Form):
 
-        ui_file_name = "UI_structure.ui"
-        ui_file = QFile(ui_file_name)
-        if not ui_file.open(QIODevice.ReadOnly):
-            print(f"Cannot open {ui_file_name}: {ui_file.errorString()}")
-            sys.exit(-1)
+    def __init__(self):
+        super().__init__()
+        # self.title = "SpecApp"
+        # self.layout = QVBoxLayout()
+        # self.setWindowTitle(self.title)
+        # # self.menu_actions()
 
-        window = loader.load(ui_file)
-        ui_file.close()
-        if not window:
-            print(loader.errorString())
-            sys.exit(-1)
-        window.show()
+        self.setupUi(self)
+        self.loadButton.clicked.connect(lambda: self.open_file_dialog())
 
-        app.exec()
+    def open_file_dialog(self):
+        dialog = QFileDialog()
+        filename = dialog.getOpenFileName()
+        if filename:
+            self.title = f"SpecApp - {filename[0]}"
+            self.data = read_data.read_data(filename[0])
+            print(self.data)
+        else:
+            self.title = "SpecApp"
+        self.setWindowTitle(self.title)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.title = "SpecApp"
-    #     self.layout = QVBoxLayout()
-    #     self.setWindowTitle(self.title)
-    #     self.menu_actions()
-    #     self.show()
-    #
-    #     self.measured_data = None
-    #
     # def menu_actions(self):
     #     self.menuBar = self.menuBar()
     #     self.fileMenu = self.menuBar.addMenu("File")
@@ -49,18 +46,11 @@ class SpecWindow(QMainWindow):
     #     self.actionOpen.triggered.connect(self.open_file_dialog)
     #     self.actionQuit = self.fileMenu.addAction("Exit")
     #     self.actionQuit.triggered.connect(sys.exit)
-    #
-    # def open_file_dialog(self):
-    #     dialog = QFileDialog()
-    #     filename = dialog.getOpenFileName()
-    #     if filename:
-    #         self.title = f"SpecApp - {filename[0]}"
-    #         self.data = read_data.read_data(filename[0])
-    #         print(self.data)
-    #     else:
-    #         self.title = "SpecApp"
-    #     self.setWindowTitle(self.title)
-        
 
 
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    widget=SpecWindow()
+    widget.show()
+    sys.exit(app.exec_())
 
