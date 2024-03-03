@@ -2,12 +2,9 @@ import sys
 import os
 from PySide6.QtWidgets import (
     QApplication,
-    QVBoxLayout,
     QFileDialog,
     QMainWindow
 )
-from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCore import QFile, QIODevice
 from PySide6.QtUiTools import loadUiType
 
 import read_data 
@@ -20,15 +17,13 @@ class SpecWindow(Base, Form):
 
     def __init__(self):
         super().__init__()
-        # self.title = "SpecApp"
-        # self.layout = QVBoxLayout()
-        # self.setWindowTitle(self.title)
-        # # self.menu_actions()
 
+        # # self.menu_actions()
         self.setupUi(self)
+        self.setWindowTitle('LighterOES')
         self.loadButton.clicked.connect(lambda: self.open_file_dialog())
 
-    def open_file_dialog(self):
+    def open_file_dialog(self): # needs to be adjusted in the future
         dialog = QFileDialog()
         filename = dialog.getOpenFileName()
         if filename:
@@ -39,7 +34,7 @@ class SpecWindow(Base, Form):
             self.title = "SpecApp"
         self.setWindowTitle(self.title)
 
-    # def menu_actions(self):
+    # def menu_actions(self): #this is initial funtion from honza, i will probably use it as saving function
     #     self.menuBar = self.menuBar()
     #     self.fileMenu = self.menuBar.addMenu("File")
     #     self.actionOpen = self.fileMenu.addAction("Open")
