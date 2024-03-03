@@ -22,6 +22,9 @@ class SpecWindow(Base, Form):
         self.setupUi(self)
         self.setWindowTitle('LighterOES')
         self.loadButton.clicked.connect(lambda: self.open_file_dialog())
+        self.spectraButton.clicked.connect(lambda: self.save_spectra())
+        self.paramsButton.clicked.connect(lambda: self.save_params())
+        self.fitButton.clicked.connect(lambda: self.fit())
 
     def open_file_dialog(self): # needs to be adjusted in the future
         dialog = QFileDialog()
@@ -33,6 +36,15 @@ class SpecWindow(Base, Form):
         else:
             self.title = "SpecApp"
         self.setWindowTitle(self.title)
+
+    def save_spectra(self):
+        print("Clicked Save params button!!!")
+
+    def save_params(self):
+        print("Clicked Save spectra button!!!")
+
+    def fit(self):
+        print("Clicked Fitting button!!!")
 
     # def menu_actions(self): #this is initial funtion from honza, i will probably use it as saving function
     #     self.menuBar = self.menuBar()
@@ -47,5 +59,5 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     widget=SpecWindow()
     widget.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
