@@ -2,7 +2,7 @@ name: "Build for Windows"
 
 on: 
   push:
-    branches: [ main ]
+    branches: [ main, include-gui ]
 
 jobs:
 
