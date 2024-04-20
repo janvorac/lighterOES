@@ -33,7 +33,7 @@ jobs:
           onefile: false
           standalone: true
           enable-plugins: pyside6
-          include-data-files: "src/UI_structure.ui"
+          include-data-files: src/UI_structure.ui=UI_structure.ui
 
       # Uploads artifact
       - name: Upload Artifact
