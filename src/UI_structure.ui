@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Widget</string>
   </property>
-  <!-- <widget class="PlotWidget" name="graphicsView">
+  <widget class="PlotWidget" name="graphicsView">
    <property name="geometry">
     <rect>
      <x>230</x>
@@ -22,7 +22,7 @@
      <height>531</height>
     </rect>
    </property>
-  </widget> -->
+  </widget>
   <widget class="QPushButton" name="loadButton">
    <property name="geometry">
     <rect>
@@ -166,11 +166,11 @@
   </widget>
  </widget>
  <customwidgets>
-  <!-- <customwidget> -->
-   <!-- <class>PlotWidget</class> -->
-   <!-- <extends>QGraphicsView</extends> -->
-   <!-- <header>pyqtgraph</header> -->
-  <!-- </customwidget> -->
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header>pyqtgraph</header>
+  </customwidget>
  </customwidgets>
  <resources/>
  <connections/>
