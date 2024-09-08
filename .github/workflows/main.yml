@@ -3,7 +3,7 @@ name: "Build for Windows"
 on:
   push:
     branches: [ main, include-gui ]
-
+  workflow_dispatch:
 jobs:
 
   build:
