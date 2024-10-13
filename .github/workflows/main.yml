@@ -1,9 +1,9 @@
 name: "Build for Windows"
 
-on: 
+on:
   push:
     branches: [ main, include-gui ]
-
+  workflow_dispatch:
 jobs:
 
   build:
@@ -28,11 +28,12 @@ jobs:
       # Build python script into a stand-alone exe
       - uses: Nuitka/Nuitka-Action@main
         with:
-          nuitka-version: factory
+          nuitka-version: main
           script-name: src/main_window.py
           onefile: false
           standalone: true
           enable-plugins: pyside6
+          include-data-files: src/UI_structure.ui=UI_structure.ui
 
       # Uploads artifact
       - name: Upload Artifact
