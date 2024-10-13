@@ -1,50 +1,51 @@
 import sys
+from ui_mainwindow import Ui_Widget
 import os
+from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
-    QMainWindow
+    QMainWindow,
+    QWidget
 )
-from PySide6.QtUiTools import loadUiType
+from PySide6.QtCore import QFile
+from PySide6.QtUiTools import loadUiType, QUiLoader
 
-import read_data 
+import read_data
 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-Form, Base = loadUiType(os.path.join(current_dir, "UI_structure.ui"))
+class SpecWindow(QMainWindow):
 
-class SpecWindow(Base, Form):
-
-    def __init__(self):
-        super().__init__()
-
-        # # self.menu_actions()
-        self.setupUi(self)
-        self.setWindowTitle('LighterOES')
-        self.loadButton.clicked.connect(lambda: self.open_file_dialog())
-        self.spectraButton.clicked.connect(lambda: self.save_spectra())
-        self.paramsButton.clicked.connect(lambda: self.save_params())
-        self.fitButton.clicked.connect(lambda: self.fit())
-
-    def open_file_dialog(self): # needs to be adjusted in the future
-        dialog = QFileDialog()
-        filename = dialog.getOpenFileName()
-        if filename:
-            self.title = f"SpecApp - {filename[0]}"
-            self.data = read_data.read_data(filename[0])
-            print(self.data)
-        else:
-            self.title = "SpecApp"
-        self.setWindowTitle(self.title)
-
-    def save_spectra(self):
-        print("Clicked Save params button!!!")
-
-    def save_params(self):
-        print("Clicked Save spectra button!!!")
-
-    def fit(self):
-        print("Clicked Fitting button!!!")
+    # def __init__(self):
+    #     super().__init__()
+    #
+    #     # # self.menu_actions()
+    #     self.setupUi(self)
+    #     self.setWindowTitle('LighterOES')
+    #     self.loadButton.clicked.connect(lambda: self.open_file_dialog())
+    #     self.spectraButton.clicked.connect(lambda: self.save_spectra())
+    #     self.paramsButton.clicked.connect(lambda: self.save_params())
+    #     self.fitButton.clicked.connect(lambda: self.fit())
+    #
+    # def open_file_dialog(self): # needs to be adjusted in the future
+    #     dialog = QFileDialog()
+    #     filename = dialog.getOpenFileName()
+    #     if filename:
+    #         self.title = f"LighterOES - {filename[0]}"
+    #         self.data = read_data.read_data(filename[0])
+    #         print(self.data)
+    #     else:
+    #         self.title = "LighterOES"
+    #     self.setWindowTitle(self.title)
+    #
+    # def save_spectra(self):
+    #     print("Clicked Save params button!!!")
+    #
+    # def save_params(self):
+    #     print("Clicked Save spectra button!!!")
+    #
+    # def fit(self):
+    #     print("Clicked Fitting button!!!")
 
     # def menu_actions(self): #this is initial funtion from honza, i will probably use it as saving function
     #     self.menuBar = self.menuBar()
@@ -54,10 +55,15 @@ class SpecWindow(Base, Form):
     #     self.actionQuit = self.fileMenu.addAction("Exit")
     #     self.actionQuit.triggered.connect(sys.exit)
 
+    def __init__(self):
+        super().__init__()
+
+        self.ui = Ui_Widget()
+        self.ui.setupUi(self)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    widget=SpecWindow()
-    widget.show()
-    sys.exit(app.exec())
+    win = SpecWindow()
+    win.show()
+    app.exec()
 
